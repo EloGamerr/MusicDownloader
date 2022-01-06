@@ -37,6 +37,10 @@ task deploy(dependsOn: build) {
         from 'pytube/.'
         into 'build/libs/pytube'
     }
+    copy {
+        from 'rekordbox.xml'
+        into 'build/libs'
+    }
 }
 
 test {

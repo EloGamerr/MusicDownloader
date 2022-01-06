@@ -11,27 +11,35 @@ import org.jaudiotagger.tag.FieldDataInvalidException;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagException;
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 
 public class Main {
     private final static String[] andFilters = {"Lucas & Steve"};
 
     public static void main(String[] args) throws IOException, InterruptedException, CannotReadException, TagException, InvalidAudioFrameException, ReadOnlyFileException, CannotWriteException {
-        String musicsPath = "C:\\Users\\elgam\\Desktop\\musics";
+        String musicsPath = "musics";
+        String musicURL = "https://www.youtube.com/watch?v=WfPu9Jrcpuk";
 
         Process process = startAndWaitForProcess("pip", "install", "moviepy", "youtube_title_parse");
 
-        if (checkScriptError(process)) {
-            return;
-        }
+        checkScriptError(process);
 
         String home = System.getProperty("user.home");
-        process = startAndWaitForProcess("python3", "pytube\\script.py", "https://www.youtube.com/watch?v=-CVn3-3g_BI", home + "\\Downloads");
+        process = startAndWaitForProcess("python3", "pytube\\script.py", musicURL, home + "\\Downloads");
 
-        if (checkScriptError(process)) {
-            return;
-        }
+        checkScriptError(process);
 
         InputStream stdIn = process.getInputStream();
         InputStreamReader isr = new InputStreamReader(stdIn);
@@ -57,24 +65,27 @@ public class Main {
             AudioFile audioFile = AudioFileIO.read(file);
             Tag tag = audioFile.getTag();
 
-            updateTitleTag(tag, title);
-            updateArtistTag(tag, title, artist);
+            String titleTag = updateTitleTag(tag, title);
+            String artistTag = updateArtistTag(tag, title, artist);
 
             AudioFileIO.write(audioFile);
 
             String artistPath = tag.getFirst(FieldKey.ARTIST).split(";")[0].trim().replaceAll(" ", "_");
             File copied = new File(musicsPath + "\\" + artistPath + "\\" + file.getName());
             FileUtils.copyFile(file, copied);
+
+            updateXML("rekordbox.xml", copied.getAbsolutePath(), titleTag, artistTag);
         }
     }
 
-    private static void updateTitleTag(Tag tag, String title) throws FieldDataInvalidException {
+    private static String updateTitleTag(Tag tag, String title) throws FieldDataInvalidException {
         String[] titleSplit = splitTitleOrArtist(title);
         title = titleSplit[0].trim();
         tag.setField(FieldKey.TITLE, title);
+        return title;
     }
 
-    private static void updateArtistTag(Tag tag, String title, String artist) throws FieldDataInvalidException {
+    private static String updateArtistTag(Tag tag, String title, String artist) throws FieldDataInvalidException {
         String[] titleSplit = splitTitleOrArtist(title);
         String[] artistSplit = splitTitleOrArtist(artist);
         StringBuilder artistTag = new StringBuilder(artistSplit[0].trim());
@@ -103,6 +114,8 @@ public class Main {
         }
 
         tag.setField(FieldKey.ARTIST, artistTag.toString());
+
+        return artistTag.toString();
     }
 
     private static String[] splitTitleOrArtist(String str) {
@@ -116,7 +129,7 @@ public class Main {
         InputStreamReader isrErr = new InputStreamReader(stdErr);
         BufferedReader brErr = new BufferedReader(isrErr);
 
-        if ((line = brErr.readLine()) != null) {
+        while ((line = brErr.readLine()) != null) {
             System.err.println(line);
             return true;
         }
@@ -130,5 +143,76 @@ public class Main {
         Process process = processBuilder.start();
         process.waitFor();
         return process;
+    }
+
+    private static boolean updateXML(String xml, String musicPath, String title, String artist) {
+        Document dom;
+        // Make an  instance of the DocumentBuilderFactory
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        try {
+            // use the factory to take an instance of the document builder
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            // parse using the builder to get the DOM mapping of the
+            // XML file
+            dom = db.parse(xml);
+
+            Element doc = dom.getDocumentElement();
+
+            Node collection = doc.getElementsByTagName("COLLECTION").item(0);
+
+            Element track = dom.createElement("TRACK");
+
+            Attr artistAttr = dom.createAttribute("Artist");
+            artistAttr.setNodeValue(artist);
+            track.getAttributes().setNamedItem(artistAttr);
+
+
+            Attr nameAttr = dom.createAttribute("Name");
+            nameAttr.setNodeValue(title);
+            track.getAttributes().setNamedItem(nameAttr);
+
+            Attr locationAttr = dom.createAttribute("Location");
+            musicPath = musicPath.replaceAll("\\\\", "/");
+            locationAttr.setNodeValue("file://localhost/" + musicPath);
+            track.getAttributes().setNamedItem(locationAttr);
+
+            collection.appendChild(track);
+
+            // Update entries amount
+            Attr entriesAttr = dom.createAttribute("Entries");
+            int entries = 0;
+            for (int i = 0; i < collection.getChildNodes().getLength(); ++i) {
+                if (collection.getChildNodes().item(i).getNodeName().equalsIgnoreCase("TRACK"))
+                    ++entries;
+            }
+            entriesAttr.setNodeValue(String.valueOf(entries));
+            collection.getAttributes().setNamedItem(entriesAttr);
+
+            try {
+                Transformer tr = TransformerFactory.newInstance().newTransformer();
+                tr.setOutputProperty(OutputKeys.METHOD, "xml");
+                tr.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+
+                // send DOM to file
+                tr.transform(new DOMSource(dom),
+                        new StreamResult(new FileOutputStream(xml)));
+
+            } catch (TransformerException te) {
+                System.out.println(te.getMessage());
+            } catch (IOException ioe) {
+                System.out.println(ioe.getMessage());
+            }
+
+            return true;
+
+        } catch (ParserConfigurationException pce) {
+            System.out.println(pce.getMessage());
+        } catch (SAXException se) {
+            System.out.println(se.getMessage());
+        } catch (IOException ioe) {
+            System.err.println(ioe.getMessage());
+        }
+
+        return false;
     }
 }
