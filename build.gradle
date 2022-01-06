@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+}
+
+group 'fr.lorek'
+version '1.0'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+compileJava.options.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    extraLibs
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation 'org.python:jython-slim:2.7.2'
+    configurations.implementation.extendsFrom(configurations.extraLibs)
+}
+
+jar {
+    manifest.attributes "Main-Class": "fr.lorek.musicdownloader.Main"
+    from {
+        configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
