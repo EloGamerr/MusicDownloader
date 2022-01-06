@@ -80,7 +80,7 @@ public class Main {
 
     private static String updateTitleTag(Tag tag, String title) throws FieldDataInvalidException {
         String[] titleSplit = splitTitleOrArtist(title);
-        title = titleSplit[0].trim();
+        title = titleSplit[0].split("\\)")[0].split(" \\(")[0].trim();
         tag.setField(FieldKey.TITLE, title);
         return title;
     }
@@ -88,7 +88,7 @@ public class Main {
     private static String updateArtistTag(Tag tag, String title, String artist) throws FieldDataInvalidException {
         String[] titleSplit = splitTitleOrArtist(title);
         String[] artistSplit = splitTitleOrArtist(artist);
-        StringBuilder artistTag = new StringBuilder(artistSplit[0].trim());
+        StringBuilder artistTag = new StringBuilder(artistSplit[0].split("\\)")[0].split(" \\(")[0].trim());
 
         for (int i = 1; i < artistSplit.length; ++i) {
             artistTag.append(";").append(artistSplit[i].split("\\)")[0].split(" \\(")[0].trim());
@@ -119,7 +119,7 @@ public class Main {
     }
 
     private static String[] splitTitleOrArtist(String str) {
-        return str.split("\\(?[fF]eat\\. ");
+        return str.split("\\(?[fF](ea)?t\\.? ");
     }
 
     private static boolean checkScriptError(Process process) throws IOException {
