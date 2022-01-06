@@ -20,16 +20,18 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException, CannotReadException, TagException, InvalidAudioFrameException, ReadOnlyFileException, CannotWriteException {
         String musicsPath = "C:\\Users\\elgam\\Desktop\\musics";
 
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("pip", "install", "moviepy", "youtube_title_parse");
-        Process process = processBuilder.start();
-        process.waitFor();
+        Process process = startAndWaitForProcess("pip", "install", "moviepy", "youtube_title_parse");
+
+        if (checkScriptError(process)) {
+            return;
+        }
 
         String home = System.getProperty("user.home");
-        processBuilder = new ProcessBuilder();
-        processBuilder.command("python3", "pytube\\script.py", "https://www.youtube.com/watch?v=-CVn3-3g_BI", home + "\\Downloads");
+        process = startAndWaitForProcess("python3", "pytube\\script.py", "https://www.youtube.com/watch?v=-CVn3-3g_BI", home + "\\Downloads");
 
-        process = processBuilder.start();
+        if (checkScriptError(process)) {
+            return;
+        }
 
         InputStream stdIn = process.getInputStream();
         InputStreamReader isr = new InputStreamReader(stdIn);
@@ -75,35 +77,58 @@ public class Main {
     private static void updateArtistTag(Tag tag, String title, String artist) throws FieldDataInvalidException {
         String[] titleSplit = splitTitleOrArtist(title);
         String[] artistSplit = splitTitleOrArtist(artist);
-        String artistTag = artistSplit[0].trim();
+        StringBuilder artistTag = new StringBuilder(artistSplit[0].trim());
 
         for (int i = 1; i < artistSplit.length; ++i) {
-            artistTag += ";" + artistSplit[i].split("\\)")[0].split(" \\(")[0].trim();
+            artistTag.append(";").append(artistSplit[i].split("\\)")[0].split(" \\(")[0].trim());
         }
 
         for (int i = 1; i < titleSplit.length; ++i) {
-            artistTag += ";" + titleSplit[i].split("\\)")[0].split(" \\(")[0].trim();
+            artistTag.append(";").append(titleSplit[i].split("\\)")[0].split(" \\(")[0].trim());
         }
 
         for (String andFilter : andFilters) {
-            if (artistTag.contains(andFilter)) {
-                artistTag = artistTag.replaceAll(andFilter, andFilter.replaceAll("&", "and"));
+            if (artistTag.toString().contains(andFilter)) {
+                artistTag = new StringBuilder(artistTag.toString().replaceAll(andFilter, andFilter.replaceAll("&", "and")));
             }
         }
 
-        artistTag = artistTag.replaceAll(" & ", ";").replaceAll(", ", ";").trim();
+        artistTag = new StringBuilder(artistTag.toString().replaceAll(" & ", ";").replaceAll(", ", ";").trim());
 
         for (String andFilter : andFilters) {
             andFilter = andFilter.replaceAll("&", "and");
-            if (artistTag.contains(andFilter)) {
-                artistTag = artistTag.replaceAll(andFilter, andFilter.replaceAll("and", "&"));
+            if (artistTag.toString().contains(andFilter)) {
+                artistTag = new StringBuilder(artistTag.toString().replaceAll(andFilter, andFilter.replaceAll("and", "&")));
             }
         }
 
-        tag.setField(FieldKey.ARTIST, artistTag);
+        tag.setField(FieldKey.ARTIST, artistTag.toString());
     }
 
     private static String[] splitTitleOrArtist(String str) {
         return str.split("\\(?[fF]eat\\. ");
+    }
+
+    private static boolean checkScriptError(Process process) throws IOException {
+        String line;
+
+        InputStream stdErr = process.getErrorStream();
+        InputStreamReader isrErr = new InputStreamReader(stdErr);
+        BufferedReader brErr = new BufferedReader(isrErr);
+
+        if ((line = brErr.readLine()) != null) {
+            System.err.println(line);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static Process startAndWaitForProcess(String... commands) throws IOException, InterruptedException {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        processBuilder.command(commands);
+        Process process = processBuilder.start();
+        process.waitFor();
+        return process;
     }
 }

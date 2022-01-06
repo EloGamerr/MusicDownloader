@@ -20,9 +20,8 @@ configurations {
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-    implementation 'org.python:jython-slim:2.7.2'
-    implementation 'net.jthink:jaudiotagger:3.0.1'
-    implementation 'commons-io:commons-io:2.11.0'
+    extraLibs 'net.jthink:jaudiotagger:3.0.1'
+    extraLibs 'commons-io:commons-io:2.11.0'
     configurations.implementation.extendsFrom(configurations.extraLibs)
 }
 
@@ -30,6 +29,13 @@ jar {
     manifest.attributes "Main-Class": "fr.lorek.musicdownloader.Main"
     from {
         configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+task deploy(dependsOn: build) {
+    copy {
+        from 'pytube/.'
+        into 'build/libs/pytube'
     }
 }
 
