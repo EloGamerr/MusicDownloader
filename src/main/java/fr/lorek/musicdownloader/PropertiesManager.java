@@ -37,7 +37,7 @@ public class PropertiesManager {
     }
 
     public void setMusicsFolder(String musicsFolder) {
-        this.properties.getProperty("musicsFolder", musicsFolder);
+        this.properties.setProperty("musicsFolder", musicsFolder);
         save();
     }
 
