@@ -34,8 +34,8 @@ jar {
 
 task deploy(dependsOn: build) {
     copy {
-        from 'pytube/.'
-        into 'build/libs/pytube'
+        from 'script.py'
+        into 'build/libs'
     }
     copy {
         from 'rekordbox.xml'

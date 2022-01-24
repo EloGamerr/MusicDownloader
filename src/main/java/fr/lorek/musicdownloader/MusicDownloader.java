@@ -102,7 +102,7 @@ public class MusicDownloader {
 
         installPythonDependencies();
 
-        Process process = startAndWaitForProcess(false, "python3", "pytube\\script.py", musicURL, "raw-musics/");
+        Process process = startAndWaitForProcess(false, "python3", "script.py", musicURL, "raw-musics/");
         checkScriptError(process);
 
         view.displayDownloadInfos("Mise à jour des informations du fichier...");
