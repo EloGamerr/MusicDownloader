@@ -61,11 +61,6 @@ public class MusicDownloader {
     }
 
     public void downloadAndImport() {
-        System.out.println(this.getXmlPath());
-        System.out.println(this.getMusicsFolder());
-        System.out.println(this.getMusicURL());
-
-        System.out.println("Démarrage du téléchargement");
         try {
             File musicFile = downloadMusic();
             if (musicFile != null)
@@ -76,7 +71,6 @@ public class MusicDownloader {
     }
 
     private void installPythonDependencies() throws IOException, InterruptedException {
-        System.out.println("Installation des dépendances Python");
         Process process = startAndWaitForProcess("pip", "install", "youtube-dl", "moviepy", "youtube_title_parse");
         checkScriptError(process);
     }
@@ -84,7 +78,6 @@ public class MusicDownloader {
     private File downloadMusic() throws IOException, InterruptedException, TagException, CannotWriteException, CannotReadException, InvalidAudioFrameException, ReadOnlyFileException {
         installPythonDependencies();
 
-        System.out.println("Lancement du script Python");
         Process process = startAndWaitForProcess("python3", "pytube\\script.py", musicURL, "raw-musics/");
         checkScriptError(process);
 
