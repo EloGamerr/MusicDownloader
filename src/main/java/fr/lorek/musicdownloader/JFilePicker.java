@@ -3,6 +3,7 @@ package fr.lorek.musicdownloader;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -83,5 +84,10 @@ public class JFilePicker extends JPanel {
 
     public JFileChooser getFileChooser() {
         return this.fileChooser;
+    }
+
+    public void setSelectedFile(File file) {
+        this.getFileChooser().setSelectedFile(file);
+        textField.setText(fileChooser.getSelectedFile().getAbsolutePath());
     }
 }

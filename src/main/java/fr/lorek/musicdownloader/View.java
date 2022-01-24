@@ -1,33 +1,87 @@
 package fr.lorek.musicdownloader;
 
+import fr.lorek.musicdownloader.listener.DownloadListener;
+import fr.lorek.musicdownloader.listener.MusicsFolderPickListener;
+import fr.lorek.musicdownloader.listener.XMLPickListener;
+
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 
 public class View {
-    JFilePicker xmlPicker;
-    JFilePicker mucisFolderPicker;
+    private final MusicDownloader musicDownloader;
+    private JTextField jTextFieldMusicURL;
 
-    public View(int width, int height) {
+    public View(int width, int height, MusicDownloader musicDownloader) {
+        this.musicDownloader = musicDownloader;
+
         JFrame frame = new JFrame("Music Downloader");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(width, height);
         frame.setLocationRelativeTo(null);
 
         Container contentPane = frame.getContentPane();
+        contentPane.setLayout(new GridLayout(4, 1));
 
-        JPanel xmlPickerBox = new JPanel();
-        xmlPickerBox.setLayout(new BoxLayout(xmlPickerBox, BoxLayout.PAGE_AXIS));
-        xmlPicker = new JFilePicker("Sélectionnez un chemin vers une collection xml de rekordbox", "Rechercher...");
-        xmlPicker.setMode(JFilePicker.MODE_OPEN);
-        xmlPicker.setFileTypeFilter(".xml", "XML");
-        xmlPickerBox.add(xmlPicker);
-        
-        mucisFolderPicker = new JFilePicker("Sélectionnez un dossier de sortie pour les musiques téléchargées", "Rechercher...");
-        mucisFolderPicker.getFileChooser().setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        mucisFolderPicker.setMode(JFilePicker.MODE_OPEN);
-        xmlPickerBox.add(mucisFolderPicker);
-        contentPane.add(xmlPickerBox);
+        addXMLPicker(contentPane);
+        addMusicsFolderPicker(contentPane);
+        addMusicURLTextField(contentPane);
+        addDownloadButton(contentPane);
 
         frame.setVisible(true);
+    }
+
+    private void addXMLPicker(Container contentPane) {
+        JPanel xmlPickerBox = new JPanel();
+        xmlPickerBox.setLayout(new GridLayout(1, 1));
+
+        JFilePicker xmlPicker = new JFilePicker("Sélectionnez un chemin vers une collection xml de rekordbox", "Rechercher...");
+        xmlPicker.setMode(JFilePicker.MODE_OPEN);
+        xmlPicker.setFileTypeFilter(".xml", "XML");
+        xmlPicker.getFileChooser().addActionListener(new XMLPickListener(this.musicDownloader));
+        xmlPicker.setSelectedFile(new File(this.musicDownloader.getXmlPath()));
+        xmlPickerBox.add(xmlPicker);
+
+        contentPane.add(xmlPickerBox);
+    }
+
+    private void addMusicsFolderPicker(Container contentPane) {
+        JPanel musicsFolderPickerBox = new JPanel();
+        musicsFolderPickerBox.setLayout(new GridLayout(1, 1));
+
+        JFilePicker mucisFolderPicker = new JFilePicker("Sélectionnez un dossier de sortie pour les musiques téléchargées", "Rechercher...");
+        mucisFolderPicker.getFileChooser().setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        mucisFolderPicker.setMode(JFilePicker.MODE_OPEN);
+        mucisFolderPicker.getFileChooser().addActionListener(new MusicsFolderPickListener(this.musicDownloader));
+        mucisFolderPicker.setSelectedFile(new File(this.musicDownloader.getMusicsFolder()));
+        musicsFolderPickerBox.add(mucisFolderPicker);
+
+        contentPane.add(musicsFolderPickerBox);
+    }
+
+    private void addMusicURLTextField(Container contentPane) {
+        JPanel textBox = new JPanel();
+
+        JLabel jLabel = new JLabel("URL de la musique à télécharger :");
+        textBox.add(jLabel);
+
+        this.jTextFieldMusicURL = new JTextField(musicDownloader.getMusicURL(), 30);
+        textBox.add(this.jTextFieldMusicURL);
+
+        contentPane.add(textBox);
+    }
+
+    private void addDownloadButton(Container contentPane) {
+        JPanel buttonBox = new JPanel();
+
+        JButton confirmButton = new JButton("Télécharger la musique");
+        confirmButton.addActionListener(new DownloadListener(this, this.musicDownloader));
+        buttonBox.add(confirmButton);
+
+        contentPane.add(buttonBox);
+    }
+
+    public String getMusicURL() {
+        return jTextFieldMusicURL.getText();
     }
 }

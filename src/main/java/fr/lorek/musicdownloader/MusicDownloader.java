@@ -27,23 +27,33 @@ import java.io.*;
 
 public class MusicDownloader {
     private final static String[] AND_FILTERS = {"Lucas & Steve"};
-    private final static String XML_PATH = "rekordbox.xml";
 
-    private String musicsFolder;
+    private final PropertiesManager propertiesManager;
     private String musicURL;
 
     public MusicDownloader() {
-        musicsFolder = "musics";
-        musicURL = "https://www.youtube.com/watch?v=WfPu9Jrcpuk";
+        this.propertiesManager = new PropertiesManager();
+        this.musicURL = "https://www.youtube.com/watch?v=gkTb9GP9lVI";
     }
 
-    public MusicDownloader(String musicsFolder, String musicURL) {
-        this.musicsFolder = musicsFolder;
-        this.musicURL = musicURL;
+    public String getMusicURL() {
+        return musicURL;
+    }
+
+    public String getXmlPath() {
+        return this.propertiesManager.getXMLPath();
+    }
+
+    public String getMusicsFolder() {
+        return this.propertiesManager.getMusicsFolder();
+    }
+
+    public void setXmlPath(String xmlPath) {
+        this.propertiesManager.setXMLPath(xmlPath);
     }
 
     public void setMusicsFolder(String musicsFolder) {
-        this.musicsFolder = musicsFolder;
+        this.propertiesManager.setMusicsFolder(musicsFolder);
     }
 
     public void setMusicURL(String musicURL) {
@@ -51,6 +61,11 @@ public class MusicDownloader {
     }
 
     public void downloadAndImport() {
+        System.out.println(this.getXmlPath());
+        System.out.println(this.getMusicsFolder());
+        System.out.println(this.getMusicURL());
+
+        System.out.println("Démarrage du téléchargement");
         try {
             File musicFile = downloadMusic();
             if (musicFile != null)
@@ -61,6 +76,7 @@ public class MusicDownloader {
     }
 
     private void installPythonDependencies() throws IOException, InterruptedException {
+        System.out.println("Installation des dépendances Python");
         Process process = startAndWaitForProcess("pip", "install", "moviepy", "youtube_title_parse");
         checkScriptError(process);
     }
@@ -68,6 +84,7 @@ public class MusicDownloader {
     private File downloadMusic() throws IOException, InterruptedException, TagException, CannotWriteException, CannotReadException, InvalidAudioFrameException, ReadOnlyFileException {
         installPythonDependencies();
 
+        System.out.println("Lancement du script Python");
         String home = System.getProperty("user.home");
         Process process = startAndWaitForProcess("python3", "pytube\\script.py", musicURL, home + "\\Downloads");
         checkScriptError(process);
@@ -121,7 +138,7 @@ public class MusicDownloader {
 
     private void copyToMusicsFolder(File musicFile, String artist) throws IOException {
         String artistPath = artist.split(";")[0].trim().replaceAll(" ", "_");
-        File copied = new File(musicsFolder + "\\" + artistPath + "\\" + musicFile.getName());
+        File copied = new File(this.propertiesManager.getMusicsFolder() + "\\" + artistPath + "\\" + musicFile.getName());
         FileUtils.copyFile(musicFile, copied);
     }
 
@@ -133,7 +150,7 @@ public class MusicDownloader {
         DocumentBuilder db = dbf.newDocumentBuilder();
         // parse using the builder to get the DOM mapping of the
         // XML file
-        dom = db.parse(XML_PATH);
+        dom = db.parse(this.propertiesManager.getXMLPath());
 
         Element doc = dom.getDocumentElement();
 
@@ -158,7 +175,7 @@ public class MusicDownloader {
 
         // send DOM to file
         tr.transform(new DOMSource(dom),
-                new StreamResult(new FileOutputStream(XML_PATH)));
+                new StreamResult(new FileOutputStream(this.propertiesManager.getXMLPath())));
     }
 
     private int getXMLTracksAmount(Node collection) {
