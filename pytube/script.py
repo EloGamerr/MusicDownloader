@@ -1,32 +1,48 @@
-from pytube import YouTube
+import youtube_dl
 from youtube_title_parse import get_artist_title
 import sys
 import os
 from moviepy.editor import *
 
-arg = sys.argv[1] 
-output_path = sys.argv[2] 
-yt = YouTube(arg)
+class MyLogger(object):
+    def debug(self, msg):
+        pass
 
-mime_type = None
-better_audio = None
+    def warning(self, msg):
+        pass
 
-for audio in yt.streams.filter(only_audio=True):
-    if mime_type == None or audio.mime_type == mime_type or audio.mime_type == 'audio/mp4':
-        mime_type = audio.mime_type
-        better_audio = audio
+    def error(self, msg):
+        pass
 
-file = better_audio.download(output_path)
+def download(url, raw_file):
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': raw_file,
+        'logger': MyLogger()
+    }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        infos = ydl.extract_info(url)
+        return infos["title"]
 
-""" Convert MP4 to MP3 """
-base, ext = os.path.splitext(file)
-new_file = base + '.mp3'
-mp4_without_frames = AudioFileClip(file)     
+url = sys.argv[1]
+output_path = sys.argv[2]
+raw_file = output_path + 'raw_music.mp3'
+
+title = download(url, raw_file)
+
+""" Convert to MP3 """
+new_file = output_path + title + '.mp3'
+mp4_without_frames = AudioFileClip(raw_file)
 mp4_without_frames.write_audiofile(new_file, verbose=False, logger=None)     
 mp4_without_frames.close()
-os.remove(file)
+os.remove(raw_file)
 
-artist, title = get_artist_title(better_audio.title)
+artist = 'Unknown'
+
+try:
+    artist, title = get_artist_title(title)
+except:
+    pass
 
 print(new_file)
 print(title)

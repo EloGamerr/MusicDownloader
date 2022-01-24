@@ -77,7 +77,7 @@ public class MusicDownloader {
 
     private void installPythonDependencies() throws IOException, InterruptedException {
         System.out.println("Installation des dépendances Python");
-        Process process = startAndWaitForProcess("pip", "install", "moviepy", "youtube_title_parse");
+        Process process = startAndWaitForProcess("pip", "install", "youtube-dl", "moviepy", "youtube_title_parse");
         checkScriptError(process);
     }
 
@@ -85,8 +85,7 @@ public class MusicDownloader {
         installPythonDependencies();
 
         System.out.println("Lancement du script Python");
-        String home = System.getProperty("user.home");
-        Process process = startAndWaitForProcess("python3", "pytube\\script.py", musicURL, home + "\\Downloads");
+        Process process = startAndWaitForProcess("python3", "pytube\\script.py", musicURL, "raw-musics/");
         checkScriptError(process);
 
         InputStream stdIn = process.getInputStream();
