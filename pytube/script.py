@@ -4,9 +4,12 @@ import sys
 import os
 from moviepy.editor import *
 
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
 class MyLogger(object):
     def debug(self, msg):
-        pass
+        eprint(msg)
 
     def warning(self, msg):
         pass
@@ -27,6 +30,14 @@ def download(url, raw_file):
 url = sys.argv[1]
 output_path = sys.argv[2]
 raw_file = output_path + 'raw_music.mp3'
+try:
+    os.remove(raw_file + ".part")
+except:
+    pass
+try:
+    os.remove(raw_file)
+except:
+    pass
 
 title = download(url, raw_file)
 

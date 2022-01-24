@@ -28,10 +28,13 @@ import java.io.*;
 public class MusicDownloader {
     private final static String[] AND_FILTERS = {"Lucas & Steve"};
 
+    private boolean runningDownload;
+    private final View view;
     private final PropertiesManager propertiesManager;
     private String musicURL;
 
-    public MusicDownloader() {
+    public MusicDownloader(View view) {
+        this.view = view;
         this.propertiesManager = new PropertiesManager();
     }
 
@@ -60,28 +63,49 @@ public class MusicDownloader {
     }
 
     public String downloadAndImport() {
-        try {
-            File musicFile = downloadMusic();
-            if (musicFile != null)
-                importMusic(musicFile);
+        if (!this.runningDownload) {
+            this.runningDownload = true;
+            try {
+                File musicFile = downloadMusic();
+                if (musicFile != null) {
+                    importMusic(musicFile);
+                    view.displayDownloadInfos("Musique téléchargée");
+                    this.runningDownload = false;
+                    return musicFile.getName();
+                }
+                else {
+                    view.displayDownloadInfos("Erreur lors du téléchargement");
+                    this.runningDownload = false;
+                    return null;
+                }
+            } catch(Exception ex) {
+                ex.printStackTrace();
+            }
 
-            return musicFile.getName();
-        } catch(Exception ex) {
-            ex.printStackTrace();
+            this.runningDownload = false;
         }
+
         return null;
     }
 
+    public boolean isRunningDownload() {
+        return runningDownload;
+    }
+
     private void installPythonDependencies() throws IOException, InterruptedException {
-        Process process = startAndWaitForProcess("pip", "install", "youtube-dl", "moviepy", "youtube_title_parse");
+        Process process = startAndWaitForProcess(true, "pip", "install", "youtube-dl", "moviepy", "youtube_title_parse");
         checkScriptError(process);
     }
 
     private File downloadMusic() throws IOException, InterruptedException, TagException, CannotWriteException, CannotReadException, InvalidAudioFrameException, ReadOnlyFileException {
+        view.displayDownloadInfos("Téléchargement en cours...");
+
         installPythonDependencies();
 
-        Process process = startAndWaitForProcess("python3", "pytube\\script.py", musicURL, "raw-musics/");
+        Process process = startAndWaitForProcess(false, "python3", "pytube\\script.py", musicURL, "raw-musics/");
         checkScriptError(process);
+
+        view.displayDownloadInfos("Mise à jour des informations du fichier...");
 
         InputStream stdIn = process.getInputStream();
         InputStreamReader isr = new InputStreamReader(stdIn);
@@ -125,7 +149,11 @@ public class MusicDownloader {
         String title = tag.getFirst(FieldKey.TITLE);
         String artist = tag.getFirst(FieldKey.ARTIST);
 
+        view.displayDownloadInfos("Déplacement du fichier dans le dossier final");
+
         copyToMusicsFolder(musicFile, artist);
+
+        view.displayDownloadInfos("Importation de la musique dans rekordbox");
 
         updateXML(musicFile.getAbsolutePath(), title, artist);
     }
@@ -236,15 +264,20 @@ public class MusicDownloader {
         BufferedReader brErr = new BufferedReader(isrErr);
 
         while ((line = brErr.readLine()) != null) {
-            System.err.println(line);
+            if (line.startsWith("[download] ")) {
+                this.view.displayDownloadInfos(line.replaceFirst("\\[download\\] ", ""));
+            } else if (!line.startsWith("[youtube] ") && !line.isEmpty()) {
+                System.err.println(line);
+            }
         }
     }
 
-    private Process startAndWaitForProcess(String... commands) throws IOException, InterruptedException {
+    private Process startAndWaitForProcess(boolean waitFor, String... commands) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(commands);
         Process process = processBuilder.start();
-        process.waitFor();
+        if (waitFor)
+            process.waitFor();
         return process;
     }
 }

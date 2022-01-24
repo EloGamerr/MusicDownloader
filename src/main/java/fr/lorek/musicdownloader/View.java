@@ -11,10 +11,11 @@ import java.io.File;
 public class View {
     private final MusicDownloader musicDownloader;
     private JTextField jTextFieldMusicURL;
+    private JLabel jLabelDownloadInfos;
     private final JFrame frame;
 
-    public View(int width, int height, MusicDownloader musicDownloader) {
-        this.musicDownloader = musicDownloader;
+    public View(int width, int height) {
+        this.musicDownloader = new MusicDownloader(this);
 
         frame = new JFrame("Music Downloader");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -22,12 +23,13 @@ public class View {
         frame.setLocationRelativeTo(null);
 
         Container contentPane = frame.getContentPane();
-        contentPane.setLayout(new GridLayout(4, 1));
+        contentPane.setLayout(new GridLayout(5, 1));
 
         addXMLPicker(contentPane);
         addMusicsFolderPicker(contentPane);
         addMusicURLTextField(contentPane);
         addDownloadButton(contentPane);
+        addDownloadInfosLabel(contentPane);
 
         frame.setVisible(true);
     }
@@ -86,7 +88,20 @@ public class View {
         contentPane.add(buttonBox);
     }
 
+    private void addDownloadInfosLabel(Container contentPane) {
+        JPanel labelBox = new JPanel();
+
+        jLabelDownloadInfos = new JLabel("");
+        labelBox.add(jLabelDownloadInfos);
+
+        contentPane.add(labelBox);
+    }
+
     public String getMusicURL() {
         return jTextFieldMusicURL.getText();
+    }
+
+    public void displayDownloadInfos(String infos) {
+        jLabelDownloadInfos.setText(infos);
     }
 }

@@ -23,13 +23,21 @@ public class DownloadListener implements ActionListener {
             JOptionPane.showMessageDialog(this.view.getFrame(), "Vous devez rentrer une URL de musique youtube !", "Erreur", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        this.musicDownloader.setMusicURL(musicURL);
-        JOptionPane.showMessageDialog(this.view.getFrame(), "Téléchargement de la musique en cours...");
-        String fileName = this.musicDownloader.downloadAndImport();
-        if (fileName == null) {
-            JOptionPane.showMessageDialog(this.view.getFrame(), "Une erreur est survenue lors du téléchargement de la musique ! Vérifiez l'URL de la vidéo youtube. Il est aussi possible que la musique soit soumise à une restriction (limite d'âge par exemple).", "Erreur", JOptionPane.ERROR_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this.view.getFrame(), "Musique '" + fileName + "' téléchargée");
+        if (this.musicDownloader.isRunningDownload()) {
+            JOptionPane.showMessageDialog(this.view.getFrame(), "Une musique est déjà en train d'être télécharger ! Vous devez attendre.", "Erreur", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        this.musicDownloader.setMusicURL(musicURL);
+        new Thread() {
+            public void run() {
+                String fileName = musicDownloader.downloadAndImport();
+                if (fileName == null) {
+                    JOptionPane.showMessageDialog(view.getFrame(), "Une erreur est survenue lors du téléchargement de la musique ! Vérifiez l'URL de la vidéo youtube. Il est aussi possible que la musique soit soumise à une restriction (limite d'âge par exemple).", "Erreur", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(view.getFrame(), "Musique '" + fileName + "' téléchargée");
+                }
+            }
+        }.start();
     }
 }
