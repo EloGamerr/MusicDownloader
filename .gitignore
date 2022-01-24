@@ -1,6 +1,7 @@
 rekordbox.xml
 musics/
 raw-musics/
+*.properties
 
 ##############################
 ## Java

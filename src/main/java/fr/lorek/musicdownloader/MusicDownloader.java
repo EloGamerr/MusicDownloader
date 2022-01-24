@@ -33,7 +33,6 @@ public class MusicDownloader {
 
     public MusicDownloader() {
         this.propertiesManager = new PropertiesManager();
-        this.musicURL = "https://www.youtube.com/watch?v=gkTb9GP9lVI";
     }
 
     public String getMusicURL() {
@@ -60,14 +59,17 @@ public class MusicDownloader {
         this.musicURL = musicURL;
     }
 
-    public void downloadAndImport() {
+    public String downloadAndImport() {
         try {
             File musicFile = downloadMusic();
             if (musicFile != null)
                 importMusic(musicFile);
+
+            return musicFile.getName();
         } catch(Exception ex) {
             ex.printStackTrace();
         }
+        return null;
     }
 
     private void installPythonDependencies() throws IOException, InterruptedException {

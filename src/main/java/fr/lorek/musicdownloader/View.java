@@ -11,11 +11,12 @@ import java.io.File;
 public class View {
     private final MusicDownloader musicDownloader;
     private JTextField jTextFieldMusicURL;
+    private final JFrame frame;
 
     public View(int width, int height, MusicDownloader musicDownloader) {
         this.musicDownloader = musicDownloader;
 
-        JFrame frame = new JFrame("Music Downloader");
+        frame = new JFrame("Music Downloader");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(width, height);
         frame.setLocationRelativeTo(null);
@@ -29,6 +30,10 @@ public class View {
         addDownloadButton(contentPane);
 
         frame.setVisible(true);
+    }
+
+    public JFrame getFrame() {
+        return frame;
     }
 
     private void addXMLPicker(Container contentPane) {
@@ -65,7 +70,7 @@ public class View {
         JLabel jLabel = new JLabel("URL de la musique à télécharger :");
         textBox.add(jLabel);
 
-        this.jTextFieldMusicURL = new JTextField(musicDownloader.getMusicURL(), 30);
+        this.jTextFieldMusicURL = new JTextField("", 30);
         textBox.add(this.jTextFieldMusicURL);
 
         contentPane.add(textBox);
